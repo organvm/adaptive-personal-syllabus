@@ -1,0 +1,9 @@
+schema_version: '1.0'
+repo: adaptive-personal-syllabus
+organ: VI
+display_name: AI-personalized education system with multi-module curriculum spanning
+  OS development, algorithms, DSLs, and mixed reality. Features Wings multi-artifact
+  framework.
+delivery:
+- platform: web_app
+  status: not_started
