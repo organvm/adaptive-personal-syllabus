@@ -551,3 +551,11 @@ Please review the community guidelines in [organvm-vi-koinonia/.github](https://
 ---
 
 *Adaptive Personal Syllabus is part of ORGAN VI (Koinonia) -- the community organ of the eight-organ creative-institutional system.*
+
+<!-- SYSTEM-NAV-START -->
+
+---
+
+<sub>[Portfolio](https://4444j99.github.io/portfolio/) · [System Directory](https://4444j99.github.io/portfolio/directory/) · [ORGAN VI · Koinonia](https://organvm-vi-koinonia.github.io/) · Part of the <a href="https://4444j99.github.io/portfolio/directory/">ORGANVM eight-organ system</a></sub>
+
+<!-- SYSTEM-NAV-END -->
