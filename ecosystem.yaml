@@ -1,9 +1,30 @@
 schema_version: '1.0'
 repo: adaptive-personal-syllabus
 organ: VI
-display_name: AI-personalized education system with multi-module curriculum spanning
-  OS development, algorithms, DSLs, and mixed reality. Features Wings multi-artifact
-  framework.
+display_name: "AI-personalized education system with multi-module curriculum and Wings multi-artifact framework"
+
 delivery:
-- platform: web_app
+- platform: python_library
+  status: in_progress
+  priority: high
+  notes: "Adaptive learning path generation with AI personalization"
+  next_action: "Complete core path generation algorithm"
+
+community:
+- platform: learning_platform
+  status: planned
+  priority: critical
+  notes: "Personalized learning paths for OS development, algorithms, DSLs, mixed reality"
+  next_action: "Design learner onboarding and assessment flow"
+
+content:
+- platform: docs_site
   status: not_started
+  priority: high
+  notes: "Curriculum design methodology, learning path documentation"
+  next_action: "Document module structure and personalization approach"
+- platform: learning_materials
+  status: in_progress
+  priority: high
+  notes: "Multi-module curriculum content across 4+ domains"
+  next_action: "Complete first module with assessment checkpoints"
