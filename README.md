@@ -148,7 +148,6 @@ The engine uses a combination of template-based rewriting (for structural elemen
 
 - Python 3.11 or later
 - Git 2.40+
-- An OpenAI-compatible API key (for LLM-assisted personalization)
 
 ### Quick Start
 
@@ -164,238 +163,132 @@ source .venv/bin/activate
 # Install dependencies
 pip install -e ".[dev]"
 
-# Initialize a learner profile (local JSON file)
-syllabus profile init --name "Jane Doe" --goals "build recursive systems" --context '{}'
-
 # Verify installation
 syllabus version
-```
-
-### Configuration
-
-The system reads configuration from three sources, in order of precedence:
-
-1. **CLI flags** -- Override any setting for a single invocation
-2. **Environment variables** -- Prefixed with `APS_` (e.g., `APS_API_KEY`, `APS_MODEL`)
-3. **Configuration file** -- `~/.adaptive-syllabus/config.yaml`
-
-```yaml
-# ~/.adaptive-syllabus/config.yaml
-api:
-  provider: openai          # openai | anthropic | local
-  model: gpt-4o             # Model identifier
-  api_key_env: APS_API_KEY  # Environment variable holding the key
-
-output:
-  directory: ./output        # Where generated Wings artifacts are written
-  format: markdown           # markdown | html | pdf
-
-personalization:
-  depth: full                # full | summary | outline
-  voice: professional        # professional | academic | casual
-```
-
-### Learner Profile Initialization
-
-Use `syllabus profile init` to generate `~/.adaptive-syllabus/profile.json`:
-
-```bash
-syllabus profile init \
-  --name "Jane Doe" \
-  --organs I,V \
-  --level beginner \
-  --goals "build recursive systems,ship portfolio artifacts" \
-  --context '{"industry":"developer tools","weekly_hours":10}'
-```
-
-```json
-{
-  "schema_version": "1.0",
-  "name": "Jane Doe",
-  "organs_of_interest": ["I", "V"],
-  "level": "beginner",
-  "goals": ["build recursive systems", "ship portfolio artifacts"],
-  "context": {
-    "industry": "developer tools",
-    "weekly_hours": 10
-  },
-  "completed_modules": []
-}
 ```
 
 ---
 
 ## 5. Usage
 
-### Module Progression (Roadmap, Not Yet Implemented CLI)
+The project exports two main CLI entrypoints: `syllabus` (with `aps` as an alias) and `aps-data-export`. All local data is stored by default in `~/.adaptive-syllabus/`.
 
-The `aps module|wings|personalize` commands shown in this section are design targets and are not part of the current shipped CLI. Use the implemented `syllabus` command group shown in **Implemented Local-First CLI (Current)**.
+### Key Commands
 
-Work through modules sequentially. Each module must be completed before the next one unlocks (though the system allows preview access for planning purposes):
-
+**1. Generate a Learning Path**
+Generate a personalized syllabus by providing organ codes and a difficulty level:
 ```bash
-# List all modules and your progress
-aps modules list
-
-# Start Module 0
-aps module start 0
-
-# View module objectives and reading list
-aps module info 0
-
-# Complete exercises (tracked automatically)
-aps exercise submit module-00/exercise-01.py
-
-# Generate Wings artifacts for a completed module
-aps wings generate 0
-
-# View your overall progress
-aps progress
+syllabus generate --organs I,II,V --level beginner --name "Jane Doe" --format md
 ```
+*Flags:*
+- `--organs`: Comma-separated organ codes (e.g., I,II,V). Required.
+- `--level`: `beginner`, `intermediate`, or `advanced`. Default is `beginner`.
+- `--name`: Learner display name. Default is `Learner`.
+- `--format`: Output format (`text`, `json`, `md`). Default is `text`.
 
-### Artifact Generation (Roadmap, Not Yet Implemented CLI)
-
-The Wings generation command produces all eight artifacts for a given module:
-
+**2. Learner Profile Management**
+Initialize a local JSON profile for the learner. The profile is saved locally and recorded in the immutable ledger.
 ```bash
-# Generate all 8 Wings for Module 0
-aps wings generate 0
-
-# Generate a specific wing
-aps wings generate 0 --wing academic
-
-# Regenerate with updated profile
-aps wings generate 0 --refresh-profile
-
-# Export to different format
-aps wings generate 0 --format pdf
-```
-
-Generated artifacts appear in the output directory:
-
-```
-output/
-  module-00-chainblockark/
-    academic.md
-    sop.md
-    business.md
-    social.md
-    community.md
-    wiki.md
-    web-blog.md
-    grants.md
-    metadata.json          # Provenance and generation context
-```
-
-### Content Personalization (Roadmap, Not Yet Implemented CLI)
-
-Process external books and courses through the personalization engine:
-
-```bash
-# Personalize a book for your context
-aps personalize book "Think and Grow Rich" --source-file think-grow-rich.txt
-
-# Personalize a course syllabus
-aps personalize course "MIT 6.S081" --url https://pdos.csail.mit.edu/6.S081/
-
-# View personalization diff (original vs. adapted)
-aps personalize diff output/personalized/think-grow-rich.md
-```
-
-### Implemented Local-First CLI (Current)
-
-The currently implemented CLI command is `syllabus` (from `pyproject.toml`), with a local-first SQLite runtime at `~/.adaptive-syllabus/adaptive_syllabus.db`. A compatibility alias `aps` is also provided and points to the same CLI entrypoint.
-
-```bash
-# 1) Ingest repository corpus with deterministic deduplication
-syllabus corpus ingest --root . --snapshot local-repo
-
-# 2) Inspect stable JSON corpus stats schema
-syllabus corpus stats
-syllabus corpus stats --snapshot-name latest
-
-# 3) Initialize learner profile
 syllabus profile init \
   --name "Jane Doe" \
   --organs I,V \
   --level beginner \
-  --goals "build recursive systems,ship portfolio artifacts" \
-  --context '{"industry":"developer tools","weekly_hours":10}'
+  --goals "build recursive systems" \
+  --context '{"industry":"developer tools"}' \
+  --output ~/.adaptive-syllabus/profile.json
+```
+*Flags:*
+- `--name`: Learner display name. Required.
+- `--organs`: Comma-separated organ codes. Default is `I`.
+- `--level`: `beginner`, `intermediate`, or `advanced`. Default is `beginner`.
+- `--goals`: Comma-separated goals. Default is empty.
+- `--context`: JSON object with contextual metadata. Default is `{}`.
+- `--completed`: Comma-separated completed module IDs. Default is empty.
+- `--output`: Path to write the profile. Default is `~/.adaptive-syllabus/profile.json`.
+- `--db-path`: Path to the local database. Default is `~/.adaptive-syllabus/koinonia.db`.
 
-# 4) Generate plan from profile + ingested corpus evidence
-syllabus plan generate --profile ~/.adaptive-syllabus/profile.json --format json
+**3. Corpus Ingestion & Statistics**
+Ingest an arbitrary directory of documents to form a deduplicated local corpus, and view stats:
+```bash
+syllabus corpus ingest --root ./docs --snapshot v1-docs
+syllabus corpus stats --snapshot-name v1-docs
+```
+*Flags for `ingest`:*
+- `--root`: Root directory to ingest. Required.
+- `--snapshot`: Snapshot name for this ingest run. Required.
+- `--db-path`: Path to the local database.
 
-# 5) Run default no-op chamber hook (AAW extension point)
-syllabus chamber run --hook input_ritual --dry-run
+*Flags for `stats`:*
+- `--snapshot-id`: Optional snapshot id selector.
+- `--snapshot-name`: Optional snapshot name selector. Default is `latest`.
+- `--db-path`: Path to the local database.
 
-# 6) Verify append-only ledger integrity
+**4. Syllabus Planning**
+Generate a profile-aware plan using a local profile and ingested corpus evidence:
+```bash
+syllabus plan generate --profile ~/.adaptive-syllabus/profile.json --format md
+```
+*Flags:*
+- `--profile`: Path to the learner profile JSON. Required.
+- `--format`: Output format (`text`, `json`, `md`). Default is `text`.
+- `--seed-dir`: Directory for seed data.
+- `--db-path`: Path to the local database.
+
+**5. Docs Audit & Execution Plans**
+Audit all documentation files against usage suggestions/milestones, exporting a detailed report or generating an execution plan:
+```bash
+syllabus docs audit --root ./docs --snapshot v1 --format md --write-md audit-report.md
+syllabus docs execute-milestone --root ./docs --milestone "core-api" --limit 10 --format json
+```
+*Flags for `audit`:*
+- `--root`: Root docs directory to audit. Required.
+- `--snapshot`: Snapshot name. Default is `docs-audit`.
+- `--format`: Output format (`json`, `md`). Default is `json`.
+- `--write-json`: Optional output path for JSON report.
+- `--write-md`: Optional output path for Markdown report.
+- `--db-path`: Path to the local database.
+
+*Flags for `execute-milestone`:*
+- `--root`: Root docs directory to audit. Required.
+- `--snapshot`: Snapshot name. Default is `docs-audit`.
+- `--milestone`: Milestone ID to execute. Defaults to report-recommended start milestone.
+- `--limit`: Maximum prioritized items. Default is `20`.
+- `--format`: Output format (`json`, `md`). Default is `json`.
+- `--write-json`: Optional output path for JSON execution plan.
+- `--write-md`: Optional output path for Markdown execution plan.
+- `--db-path`: Path to the local database.
+
+**6. Ledger Verification**
+Verify the integrity of the append-only SQLite ledger:
+```bash
 syllabus ledger verify
 ```
+*Flags:*
+- `--db-path`: Path to the local database.
 
-Supported corpus extensions in MVP1:
-
-`md, txt, yaml, yml, json, toml, csv, tsv, rst, pdf, docx`
-
----
-
-## 6. Working Examples
-
-### Module 0 Walkthrough: ChainBlockARK
-
-Module 0 establishes the provenance infrastructure that tracks all subsequent learning activity. The ChainBlockARK (Chain-Block-Archive) is a self-documenting ledger that records every prompt sent to an AI, every commit made, every build executed, and every reading note taken. This is not blockchain in the cryptocurrency sense -- it is a hash-chained append-only log that makes learning activity auditable and reproducible.
-
-**Step 1: Initialize the ledger**
-
+**7. Chamber Hooks**
+Run registered chamber hooks (e.g., `input_ritual`):
 ```bash
-aps module start 0
-# Creates ~/.adaptive-syllabus/chainblockark.db (SQLite)
-# Generates genesis block with learner profile hash
+syllabus chamber run --hook input_ritual --dry-run
 ```
+*Flags:*
+- `--hook`: Hook name to execute. Required.
+- `--dry-run` / `--execute`: Whether to do a dry-run. Default is `--dry-run`.
+- `--context`: JSON object context for the hook. Default is `{}`.
+- `--plan-id`: Optional DB plan ID.
+- `--db-path`: Path to the local database.
 
-**Step 2: Complete the foundational exercises**
-
-The exercises for Module 0 introduce hash chaining, append-only data structures, and provenance metadata:
-
-```python
-# exercise-01: Implement a minimal hash chain
-from adaptive_personal_syllabus.chainblockark import Block, Chain
-
-chain = Chain()
-chain.append(Block(
-    action="reading_note",
-    source="SICP Chapter 1.1",
-    content="Substitution model of evaluation...",
-    learner_reflection="Connection to recursive-engine organ handlers"
-))
-
-assert chain.verify_integrity()
-print(f"Chain length: {len(chain)} blocks")
-print(f"Latest hash: {chain.head.hash[:16]}...")
-```
-
-**Step 3: Generate Wings artifacts**
-
-After completing Module 0's exercises, generate the eight Wings:
-
+**8. Data Export**
+Export sample learning paths to JSON (generates beginner, intermediate, and advanced examples into `data/sample-learning-paths.json`):
 ```bash
-aps wings generate 0
+aps-data-export
 ```
 
-### Wings Output Samples
-
-Below are excerpts from the Wings artifacts generated for a learner whose profile indicates they are a senior software engineer building IoT embedded systems:
-
-**Academic Wing (excerpt):**
-> This module establishes a provenance-tracking infrastructure inspired by Merkle tree structures (Merkle, 1979) and applied to educational activity logging. Unlike conventional learning management systems that track only completion status, the ChainBlockARK maintains cryptographic integrity guarantees over the full sequence of learner interactions, enabling reproducible audit trails for competency claims.
-
-**Business Wing (excerpt):**
-> For Acme Corp's IoT developer tooling platform, the ChainBlockARK pattern translates directly into a customer-facing feature: auditable firmware update chains. Each update to a deployed device can be tracked through a hash-chained ledger, providing the compliance documentation required by IEC 62443 (industrial cybersecurity) without additional engineering effort.
-
-**Social Wing (excerpt):**
-> Started Module 0 of my OS-from-scratch learning journey. Built a hash-chained activity ledger that tracks every commit, AI interaction, and reading note. Think git log meets blockchain meets learning diary. The provenance chain already has 47 blocks. #BuildInPublic #SystemsProgramming
-
-**Grants Wing (excerpt):**
-> The provenance infrastructure developed in this phase addresses a documented gap in competency verification for self-directed learners (Thompson et al., 2024). By maintaining cryptographically verifiable records of learning activity, the system provides evidence suitable for portfolio assessment by fellowship review committees and grant panels evaluating technical capacity.
+**9. Version**
+Check the installed version:
+```bash
+syllabus version
+```
 
 ---
 
